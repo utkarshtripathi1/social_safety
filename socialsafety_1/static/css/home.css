@@ -40,6 +40,7 @@ line-height:1.1}
 .hero span{
 background:linear-gradient(45deg,#ff4d79,#ff7eb3);
 -webkit-background-clip:text;
+background-clip: text;
 -webkit-text-fill-color:transparent}
 .hero p{margin:20px 0;line-height:1.8;color:#cbd5e1}
 .cta{display:flex;gap:15px;flex-wrap:wrap}
