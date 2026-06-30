@@ -39,21 +39,24 @@ Incident Reporting Center
 Submit Incident
 </h2>
 
-<form id="reportForm">
+<form method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
 
 <input
 type="text"
 id="name"
-placeholder="Full Name"
+placeholder="Full Name" 
+name="fullname"
 required>
 
 <input
 type="text"
 id="location"
 placeholder="Incident Location"
+name="location"
 required>
 
-<select id="category">
+<select id="category" name="category">
 
 <option>Harassment</option>
 <option>Stalking</option>
@@ -68,12 +71,14 @@ required>
 rows="6"
 id="description"
 placeholder="Describe the incident..."
+name="description"
 required></textarea>
 
 <input
 type="file"
 id="imageUpload"
-accept="image/*">
+accept="image/*"
+name="image">
 
 <img
 id="preview"
@@ -97,9 +102,18 @@ Submit Report
 Recent Reports
 </h2>
 
-<div id="reportList"></div>
+{% for report in reports %}
 
+<div class="status-card">
+    <h3>{{ report.category }}</h3>
+    <p><strong>Location:</strong> {{ report.location }}</p>
+    <p><strong>Status:</strong> {{ report.status }}</p>
+    <p><strong>Date:</strong> {{ report.created_at }}</p>
 </div>
+
+{% empty %}
+<p>No reports found.</p>
+{% endfor %}
 
 </div>
 
@@ -135,113 +149,9 @@ preview.style.display =
 }
 );
 
-let reports =
-JSON.parse(
-localStorage.getItem(
-"safeherReports"
-)
-) || [];
 
-document
-.getElementById(
-"reportForm"
-)
-.addEventListener(
-"submit",
-function(e){
 
-e.preventDefault();
 
-const report = {
-
-name:
-document.getElementById(
-"name"
-).value,
-
-location:
-document.getElementById(
-"location"
-).value,
-
-category:
-document.getElementById(
-"category"
-).value,
-
-description:
-document.getElementById(
-"description"
-).value,
-
-status:
-"Pending Review",
-
-date:
-new Date()
-.toLocaleString()
-
-};
-
-reports.push(report);
-
-localStorage.setItem(
-"safeherReports",
-JSON.stringify(reports)
-);
-
-alert(
-"Report Submitted Successfully!"
-);
-
-this.reset();
-
-preview.style.display =
-"none";
-
-renderReports();
-
-}
-);
-
-function renderReports(){
-
-const container =
-document.getElementById(
-"reportList"
-);
-
-container.innerHTML = "";
-
-reports
-.slice()
-.reverse()
-.forEach(report=>{
-
-container.innerHTML += `
-
-<div class="status-card">
-
-<h3>${report.category}</h3>
-
-<p><strong>Location:</strong>
-${report.location}</p>
-
-<p><strong>Status:</strong>
-${report.status}</p>
-
-<p><strong>Date:</strong>
-${report.date}</p>
-
-</div>
-
-`;
-
-});
-
-}
-
-renderReports();
 
 </script>
 

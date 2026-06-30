@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User
 from .forms import SignupForm
-
+from .models import Report
 # Create your views here.
 @login_required
 def Home(request):
@@ -51,8 +51,7 @@ def contact(request):
 
 
 def signup(request):
-    if request.user.is_authenticated:
-        return redirect("home")
+   
 
     form = SignupForm(request.POST or None)
 
@@ -67,5 +66,25 @@ def signup(request):
 
     return render(request, "signup.html", {"form": form})
 @login_required
+
+
 def report(request):
-    return render(request , "report.html")
+
+    if request.method == "POST":
+
+        Report.objects.create(
+            user=request.user,
+            name=request.POST["fullname"],
+            location=request.POST["location"],
+            category=request.POST["category"],
+            description=request.POST["description"],
+            image=request.FILES.get("image")
+        )
+
+        return redirect("report")
+
+    reports = Report.objects.filter(user=request.user).order_by("-created_at")
+
+    return render(request, "report.html", {
+        "reports": reports
+    })

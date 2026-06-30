@@ -10,7 +10,7 @@
 </head>
 <body>
     <nav>
-        <div class="logo">🛡 SafeHer</div>
+        <div class="logo">🛡 SafetyHub</div>
         <ul class="nav-links">
             <li><a href="#hero">Home</a></li>
             <li><a href="#features">Features</a></li>
@@ -21,8 +21,8 @@
             
         </ul>
         <div>
-            <a href="/login" class="btn login">Login</a>
-            <a href="/signup" class="btn signup">Sign Up</a>
+            <a href="{%url 'logout'%}" class="btn login">Logout</a>
+            <a href="{% url 'signup' %}" class="btn signup">Sign Up / Sign In</a>
         </div>
     </nav>
     {% block body %}
