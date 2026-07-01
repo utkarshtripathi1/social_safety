@@ -62,7 +62,7 @@ def signup(request):
             user.save()
 
             messages.success(request, "Account created successfully!")
-           
+            return redirect('login')
 
     return render(request, "signup.html", {"form": form})
 @login_required

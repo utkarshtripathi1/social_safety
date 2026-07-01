@@ -20,11 +20,13 @@
             <li><a href="/profile">Profile</a></li>
             
         </ul>
-        <div>
+        <div >
             <a href="{%url 'logout'%}" class="btn login">Logout</a>
-            <a href="{% url 'signup' %}" class="btn signup">Sign Up / Sign In</a>
+           
         </div>
+        <h2  class="">Welocome, {{ user.first_name|default:user.username }}</h2>
     </nav>
+    
     {% block body %}
 
     {% endblock body%}
