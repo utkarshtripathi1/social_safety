@@ -24,7 +24,7 @@
             <a href="{%url 'logout'%}" class="btn login">Logout</a>
            
         </div>
-        <h2  class="">Welocome, {{ user.first_name|default:user.username }}</h2>
+        <h2  class="">Welcome! {{ user.first_name|default:user.username }} 👋</h2>
     </nav>
     
     {% block body %}

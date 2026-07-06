@@ -5,207 +5,84 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>SafeHer - Trusted Contacts</title>
+<title>SafetyHub - Trusted Contacts</title>
 
-<link href="{% static '/css/contact.css' %}" rel="stylesheet">
-
+<link href="{% static 'css/contact.css' %}" rel="stylesheet">
 
 </head>
 
 <body>
 
 <div class="sidebar">
+    <div class="logo">🛡 SafetyHub</div>
 
-<div class="logo">
-🛡 SafeHer
-</div>
-<a href="/Home">🏠 Home</a>
-<a href="/dashboard">☰ Dashboard</a>
-
-<a href="/contacts">👨‍👩‍👧 Contacts</a>
-<a href="/report">📝 Report Incident</a>
-<a href="/profile">👤 Profile</a>
-<a href="/Home">🚪 Logout</a>
-
+    <a href="/Home">🏠 Home</a>
+    <a href="/dashboard">☰ Dashboard</a>
+    <a href="/contacts">👨‍👩‍👧 Contacts</a>
+    <a href="/report">📝 Report Incident</a>
+    <a href="/profile">👤 Profile</a>
+    <a href="{% url 'logout' %}">🚪 Logout</a>
 </div>
 
 <div class="main">
 
-<h1 class="page-title">
-Trusted Contacts
-</h1>
+<h1 class="page-title">Trusted Contacts</h1>
 
+<!-- FORM -->
 <div class="form-box">
+<form method="post">
+    {% csrf_token %}
 
-<input
-type="text"
-id="name"
-name="name"
-placeholder="Contact Name">
+    <input type="text" name="name" placeholder="Contact Name">
 
-<input
-type="tel"
-id="phone"
-name="phone"
-placeholder="Phone Number">
+    <input type="number" name="phone" placeholder="Phone Number">
+    <input type="email" name="email" placeholder="Email">
 
-<select id="priority" name="priority">
+    <select name="priority">
+        <option value="Primary">Primary Contact</option>
+        <option value="Secondary">Secondary Contact</option>
+        <option value="Emergency">Emergency Contact</option>
+    </select>
 
-<option value="Primary">
-Primary Contact
-</option>
+    <button type="submit" class="btn">
+        Add Contact
+    </button>
+</form>
+</div>
 
-<option value="Secondary">
-Secondary Contact
-</option>
+<!-- CONTACT LIST -->
+<div class="contact-grid">
 
-<option value="Emergency">
-Emergency Contact
-</option>
+    {% for contact in contacts %}
 
-</select>
+    <div class="contact-card">
 
-<button class="btn" onclick="addContact()">
-Add Contact
-</button>
+        <div class="priority">
+            {{ contact.priority }}
+        </div>
+
+        <h3>{{ contact.name }}</h3>
+
+        <p>📞 {{ contact.phone }}</p>
+
+        <form method="post" action="{% url 'delete_contact' contact.id %}">
+            {% csrf_token %}
+            <button type="submit" class="delete-btn">
+                Delete
+            </button>
+        </form>
+
+    </div>
+
+    {% empty %}
+
+    <p>No contacts added yet.</p>
+
+    {% endfor %}
 
 </div>
 
-<input
-type="text"
-id="search"
-class="search"
-placeholder="Search Contacts..."
-onkeyup="searchContact()">
-
-<div
-class="contact-grid"
-id="contactContainer">
 </div>
-
-</div>
-
-<script>
-
-let contacts =
-JSON.parse(
-localStorage.getItem("safeherContacts")
-) || [];
-
-function saveContacts(){
-
-localStorage.setItem(
-"safeherContacts",
-JSON.stringify(contacts)
-);
-
-}
-
-function addContact(){
-
-const name =
-document.getElementById("name").value;
-
-const phone =
-document.getElementById("phone").value;
-
-const priority =
-document.getElementById("priority").value;
-
-if(!name || !phone){
-
-alert("Fill all fields");
-return;
-
-}
-
-contacts.push({
-
-name,
-phone,
-priority
-
-});
-
-saveContacts();
-
-renderContacts();
-
-document.getElementById("name").value="";
-document.getElementById("phone").value="";
-
-}
-
-function deleteContact(index){
-
-contacts.splice(index,1);
-
-saveContacts();
-
-renderContacts();
-
-}
-
-function renderContacts(filtered = contacts){
-
-const container =
-document.getElementById(
-"contactContainer"
-);
-
-container.innerHTML="";
-
-filtered.forEach((contact,index)=>{
-
-container.innerHTML += `
-
-<div class="contact-card">
-
-<div class="priority">
-${contact.priority}
-</div>
-
-<h3>${contact.name}</h3>
-
-<p>📞 ${contact.phone}</p>
-
-<button
-class="delete-btn"
-onclick="deleteContact(${index})">
-Delete
-</button>
-
-</div>
-
-`;
-
-});
-
-}
-
-function searchContact(){
-
-const query =
-document.getElementById("search")
-.value
-.toLowerCase();
-
-const filtered =
-contacts.filter(contact =>
-
-contact.name
-.toLowerCase()
-.includes(query)
-
-);
-
-renderContacts(filtered);
-
-}
-
-renderContacts();
-
-</script>
 
 </body>
 </html>

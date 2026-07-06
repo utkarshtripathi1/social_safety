@@ -1,146 +1,114 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>SafeHer - Profile</title>
+<title>SafetyHub - Profile</title>
 
-<link href="{% static '/css/profile.css' %}" rel="stylesheet">
-
+<link href="{% static 'css/profile.css' %}" rel="stylesheet">
 </head>
 
 <body>
 
+<!-- ================= SIDEBAR ================= -->
 <div class="sidebar">
 
-<div class="logo">
-🛡 SafeHer
-</div>
-<a href="/Home">🏠 Home</a>
-<a href="/dashboard">☰ Dashboard</a>
+    <div class="logo">🛡 SafetyHub</div>
 
-<a href="/contacts">👨‍👩‍👧 Contacts</a>
-<a href="/report">📝 Report Incident</a>
-<a href="/profile">👤 Profile</a>
-<a href="/Home">🚪 Logout</a>
+    <a href="/Home">🏠 Home</a>
+    <a href="/dashboard">☰ Dashboard</a>
+    <a href="/contacts">👨‍👩‍👧 Contacts</a>
+    <a href="/report">📝 Report Incident</a>
+    <a href="/profile">👤 Profile</a>
+    <a href="{% url 'logout' %}">🚪 Logout</a>
 
 </div>
 
+<!-- ================= MAIN ================= -->
 <div class="main">
 
 <div class="profile-card">
 
-<div class="profile-header">
+<!-- ================= PROFILE FORM ================= -->
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
 
-<img
-src="https://via.placeholder.com/140"
-id="profileImage"
-class="profile-pic">
+    <div class="profile-header">
 
-<br>
+        {% if profile.image %}
+            <img src="{{ profile.image.url }}" class="profile-pic">
+        {% else %}
+            <img src="{% static 'default.png' %}" class="profile-pic">
+        {% endif %}
 
-<input
-type="file"
-id="imageUpload"
-class="upload-btn"
-accept="image/*">
+        <input type="file" name="image" accept="image/*">
 
-<h2 id="displayName">
-User Name
-</h2>
+        <h2>{{ profile.name|default:"User Name" }}</h2>
+        <p>SafetyHub Member</p>
 
-<p>
-SafeHer Member
-</p>
+    </div>
 
-</div>
+    <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" name="name" value="{{ profile.name|default:'' }}">
+    </div>
 
-<div class="form-group">
+    <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" value="{{ profile.email|default:'' }}">
+    </div>
 
-<label>Full Name</label>
+    <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" name="phone" value="{{ profile.phone|default:'' }}">
+    </div>
 
-<input
-type="text"
-id="name"
-placeholder="Enter Name">
+    <!-- Hidden location fields -->
+    <input type="hidden" name="latitude" id="latitude">
+    <input type="hidden" name="longitude" id="longitude">
 
-</div>
+    <button class="btn" type="submit">
+        Save Profile
+    </button>
 
-<div class="form-group">
+</form>
 
-<label>Email</label>
-
-<input
-type="email"
-id="email"
-placeholder="Enter Email">
-
-</div>
-
-<div class="form-group">
-
-<label>Phone Number</label>
-
-<input
-type="tel"
-id="phone"
-placeholder="Enter Phone Number">
-
-</div>
-
-<button
-class="btn"
-onclick="saveProfile()">
-
-Save Profile
-
-</button>
-
+<!-- ================= SAFETY SETTINGS ================= -->
 <div class="settings">
 
-<h3>
-Settings
-</h3>
+    <h3>Safety Settings</h3>
 
-<div class="toggle">
+    <div class="toggle">
+        <span>🌙 Dark Mode</span>
+        <button class="btn" type="button" onclick="toggleDarkMode()">
+            Toggle
+        </button>
+    </div>
 
-<span>
-🌙 Dark Mode
-</span>
+    <div class="toggle">
+        <span>📍 Share Location During SOS</span>
+        <input type="checkbox" checked disabled>
+    </div>
 
-<button
-class="btn"
-onclick="toggleDarkMode()">
-
-Toggle
-
-</button>
-
-</div>
-
-<div class="toggle">
-
-<span>
-📍 Share Location During SOS
-</span>
-
-<input
-type="checkbox"
-checked>
+    <div class="toggle">
+        <span>📲 Notify Trusted Contacts</span>
+        <input type="checkbox" checked disabled>
+    </div>
 
 </div>
 
-<div class="toggle">
+<!-- ================= SOS INFO ================= -->
+<div class="sos-info">
 
-<span>
-📲 Notify Trusted Contacts
-</span>
+    <h3>🚨 SOS System Info</h3>
 
-<input
-type="checkbox"
-checked>
+    <p>
+        Your profile is linked to the SOS emergency system.
+        When SOS is triggered, your latest location will be shared.
+    </p>
 
 </div>
 
@@ -148,115 +116,40 @@ checked>
 
 </div>
 
-</div>
-
+<!-- ================= JAVASCRIPT ================= -->
 <script>
 
-const imageUpload =
-document.getElementById(
-"imageUpload"
-);
+let dark = false;
 
-imageUpload.addEventListener(
-"change",
-function(){
-
-const file =
-this.files[0];
-
-if(file){
-
-document.getElementById(
-"profileImage"
-).src =
-URL.createObjectURL(file);
-
+/* FIXED DARK MODE (matches your CSS .dark class) */
+function toggleDarkMode() {
+    dark = !dark;
+    document.body.classList.toggle("dark", dark);
 }
 
-}
-);
+/* LOCATION CAPTURE */
+window.onload = function () {
 
-function saveProfile(){
+    if (navigator.geolocation) {
 
-const profile = {
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
 
-name:
-document.getElementById(
-"name"
-).value,
+                document.getElementById("latitude").value = position.coords.latitude;
+                document.getElementById("longitude").value = position.coords.longitude;
 
-email:
-document.getElementById(
-"email"
-).value,
+                console.log("Location captured ✔");
 
-phone:
-document.getElementById(
-"phone"
-).value
+            },
+            function (error) {
+                console.log("Location error:", error.message);
+            }
+        );
 
+    } else {
+        console.log("Geolocation not supported");
+    }
 };
-
-localStorage.setItem(
-"safeherProfile",
-JSON.stringify(profile)
-);
-
-document.getElementById(
-"displayName"
-).innerText =
-profile.name || "User Name";
-
-alert(
-"Profile Saved Successfully!"
-);
-
-}
-
-function loadProfile(){
-
-const profile =
-JSON.parse(
-localStorage.getItem(
-"safeherProfile"
-)
-);
-
-if(profile){
-
-document.getElementById(
-"name"
-).value =
-profile.name || "";
-
-document.getElementById(
-"email"
-).value =
-profile.email || "";
-
-document.getElementById(
-"phone"
-).value =
-profile.phone || "";
-
-document.getElementById(
-"displayName"
-).innerText =
-profile.name || "User Name";
-
-}
-
-}
-
-function toggleDarkMode(){
-
-document.body.classList.toggle(
-"dark"
-);
-
-}
-
-loadProfile();
 
 </script>
 

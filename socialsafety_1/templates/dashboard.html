@@ -6,10 +6,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>HumSafe Dashboard</title>
+<title>SafetyHub Dashboard</title>
 
 <link href="{% static '/css/dashboard.css' %}" rel="stylesheet">
-
 </head>
 
 <body>
@@ -17,7 +16,7 @@
 <div class="sidebar">
 
 <div class="logo">
-🛡 SafeHer
+🛡 SafetyHub
 </div>
 
     <a href="/Home">🏠 Home</a>
@@ -37,11 +36,12 @@
 <h1>Dashboard</h1>
 
 <div class="profile">
-Welcome User 👋
+Welcome {{ user.first_name|default:user.username }} 👋
 </div>
 
 </div>
 
+<!-- ================= SOS SECTION ================= -->
 <div class="sos-section">
 
 <button class="sos-btn" onclick="activateSOS()">
@@ -52,6 +52,7 @@ Welcome User 👋
 
 </div>
 
+<!-- ================= CARDS ================= -->
 <div class="cards">
 
 <div class="card">
@@ -62,35 +63,29 @@ Welcome User 👋
 Location not fetched
 </p>
 
-
-<a href="/location" id="locat">
-    <button class="btn" onclick="getLocation()">
-        Get Location
-    </button>
-</a>
-
+<button class="btn" onclick="getLocation()">
+Get Location
+</button>
 
 </div>
+
 
 <div class="card">
 
 <h3>🚔 Emergency Helpline</h3>
 
 <p>Police: 112</p>
-
 <p>Women Helpline: 1091</p>
-
 <p>Ambulance: 108</p>
 
 </div>
+
 
 <div class="card">
 
 <h3>👨‍👩‍👧 Trusted Contacts</h3>
 
-<p>
-Manage emergency contacts.
-</p>
+<p>Manage emergency contacts.</p>
 
 <button class="btn">
 View Contacts
@@ -98,13 +93,13 @@ View Contacts
 
 </div>
 
+
+<!-- ================= VOICE SOS ================= -->
 <div class="card">
 
 <h3>🎙 Voice SOS</h3>
 
-<p>
-Activate SOS using voice commands.
-</p>
+<p>Say "help" or "sos" to activate emergency alert.</p>
 
 <button class="btn" onclick="voiceSOS()">
 Start Voice SOS
@@ -114,6 +109,7 @@ Start Voice SOS
 
 </div>
 
+<!-- ================= ACTIVITY ================= -->
 <div class="activity">
 
 <h2>Recent Activity</h2>
@@ -121,17 +117,15 @@ Start Voice SOS
 <ul>
 
 <li>Location shared successfully</li>
-
 <li>Trusted contact added</li>
-
 <li>SOS system ready</li>
-
 <li>Incident reporting enabled</li>
 
 </ul>
 
 </div>
 
+<!-- ================= SAFETY TIPS ================= -->
 <h2 style="margin-bottom:20px;">
 Safety Tips
 </h2>
@@ -158,7 +152,115 @@ Stay aware of your surroundings.
 
 </div>
 
-<script src="{% static '/js/dashboard.js' %}">
+<!-- ================= SCRIPT ================= -->
+<script>
+
+/* ========== SOS BUTTON FLOW (UNCHANGED LOGIC) ========== */
+function activateSOS(){
+
+    let count = 1;
+    const status = document.getElementById("sosStatus");
+
+    status.innerHTML = "SOS activating in 1 seconds";
+
+    let timer = setInterval(() => {
+
+        count--;
+
+        status.innerHTML = "SOS activating in " + count + " seconds";
+
+        if(count <= 0){
+
+            clearInterval(timer);
+
+            status.innerHTML = "🚨 SOS ACTIVATED";
+
+            getLocation(); // SAME FLOW AS BUTTON
+        }
+
+    }, 1000);
+}
+
+
+/* ========== GET LOCATION ========== */
+function getLocation(){
+
+    if(navigator.geolocation){
+
+        navigator.geolocation.getCurrentPosition(function(position){
+
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            document.getElementById("locationText").innerHTML =
+                "Latitude: " + latitude +
+                "<br>Longitude: " + longitude;
+
+            sendSOS(latitude, longitude);
+
+        }, function(error){
+            alert("Location error: " + error.message);
+        });
+
+    } else {
+        alert("Geolocation not supported");
+    }
+}
+
+
+/* ========== SEND SOS TO DJANGO (UNCHANGED BACKEND) ========== */
+async function sendSOS(latitude, longitude){
+
+    const response = await fetch("/receive/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            latitude: latitude,
+            longitude: longitude
+        })
+    });
+
+    const data = await response.json();
+    alert(data.message);
+}
+
+
+/* ========== VOICE SOS (TRIGGERS SAME FLOW) ========== */
+function voiceSOS(){
+
+    const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if(!SpeechRecognition){
+        alert("Voice recognition not supported in this browser");
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = "en-US";
+    recognition.start();
+
+    recognition.onresult = function(event){
+
+        const speech =
+            event.results[0][0].transcript.toLowerCase();
+
+        //alert("You said: " + speech);
+
+        // SAME AS BUTTON CLICK
+        if(speech.includes("help") || speech.includes("sos")){
+            activateSOS();
+        }
+    };
+
+    recognition.onerror = function(event){
+        console.log("Voice error:", event.error);
+    };
+}
+
 </script>
 
 </body>

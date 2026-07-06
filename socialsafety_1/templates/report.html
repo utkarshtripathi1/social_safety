@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>SafeHer - Incident Report</title>
+<title>Safety - Incident Report</title>
 
 <link href="{% static '/css/report.css' %}" rel="stylesheet">
 
@@ -23,7 +23,7 @@
 <a href="/contacts">👨‍👩‍👧 Contacts</a>
 <a href="/report">📝 Report Incident</a>
 <a href="/profile">👤 Profile</a>
-<a href="/Home">🚪 Logout</a>
+<a href="{{ user.first_name|default:user.username }}">🚪 Logout</a>
 
 </div>
 
