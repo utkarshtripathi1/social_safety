@@ -21,7 +21,8 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
+    
+    path("database/", admin.site.urls),
     path("", include('socialsafety_1.urls')),
     ]
 if settings.DEBUG:
