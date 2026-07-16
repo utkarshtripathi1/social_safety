@@ -1,7 +1,7 @@
 media/
 static/
 staticfiles/
-__pychache__/
+__pycache__/
 .env
 .DS_Store
 db.sqlite3
