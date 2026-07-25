@@ -5,7 +5,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
-from django.conf import settings
+
+from twilio.rest import Client
+
 from .forms import SignupForm
 from .models import Report, Contact, Profile, SOS
 
@@ -181,65 +183,85 @@ def receive_sos(request):
     if request.method != "POST":
         return JsonResponse({"message": "Only POST allowed"}, status=405)
 
+    # Read JSON
     try:
         data = json.loads(request.body.decode("utf-8"))
-    except:
+    except Exception:
         return JsonResponse({"message": "Invalid JSON"}, status=400)
 
-    lat = float(data.get("latitude"))
-    lon = float(data.get("longitude"))
+    # Get location
+    try:
+        lat = float(data.get("latitude"))
+        lon = float(data.get("longitude"))
+    except (TypeError, ValueError):
+        return JsonResponse({"message": "Invalid coordinates"}, status=400)
+
     map_link = f"https://www.google.com/maps?q={lat},{lon}"
 
-    # SAVE SOS
+    # Save SOS
     SOS.objects.create(
         user=request.user,
         latitude=lat,
         longitude=lon
     )
 
-    # Get all trusted contact emails
-    trusted_emails = list(
-    Contact.objects.filter(user=request.user)
-    .exclude(email__isnull=True)
-    .exclude(email="")
-    .values_list("email", flat=True)
-)
+    # Twilio Client
+    client = Client(
+        settings.TWILIO_ACCOUNT_SID,
+        settings.TWILIO_AUTH_TOKEN
+    )
 
-    # Send SOS to ALL trusted contacts
-    print("Trusted emails:", trusted_emails)
-    if trusted_emails:
+    # ===========================================
+    # SEND SMS TO TRUSTED CONTACTS
+    # ===========================================
+
+    trusted_numbers = list(
+        Contact.objects.filter(user=request.user)
+        .exclude(phone__isnull=True)
+        .exclude(phone="")
+        .values_list("phone", flat=True)
+    )
+
+    trusted_sms_sent = 0
+
+    print("Trusted numbers:", trusted_numbers)
+
+    for phone in trusted_numbers:
+
+        # Add +91 automatically
+        if phone and not phone.startswith("+"):
+            phone = "+91" + phone
+
         try:
-            send_mail(
-                subject="🚨 SOS ALERT - Emergency",
-                message=f"""
-🚨 EMERGENCY ALERT 🚨
+            client.messages.create(
+                body=f"""
+🚨 SOS ALERT 🚨
 
-⚠️ Someone is in danger and needs immediate help! 🆘
+Someone needs immediate help!
 
-📍 Please respond immediately or contact emergency services.
-
-Location:
-Latitude: {lat}
-Longitude: {lon}
-
-Google Maps:
+Current Location:
 {map_link}
 
-Stay safe.
-""",
-                from_email=settings.EMAIL_HOST_USER,
-                recipient_list=trusted_emails,
-                fail_silently=False,
+Please contact them immediately.
+                """,
+                from_=settings.TWILIO_PHONE_NUMBER,
+                to=phone
             )
-            print("SOS sent to trusted contacts.")
-        except Exception as e:
-            print("Trusted contact email error:", e)
 
-    # Existing nearby profile logic (UNCHANGED)
+            trusted_sms_sent += 1
+            print(f"SMS sent to {phone}")
+
+        except Exception as e:
+            print(f"Trusted SMS Error ({phone}): {e}")
+
+    # ===========================================
+    # SEND SMS TO NEARBY USERS
+    # ===========================================
+
     profiles = Profile.objects.exclude(user=request.user)
 
     nearby_count = 0
-    email_sent = 0
+    nearby_sms_sent = 0
 
     for p in profiles:
 
@@ -247,59 +269,50 @@ Stay safe.
             continue
 
         d = distance(lat, lon, p.latitude, p.longitude)
-        print(f"Checking: {p.user.username}")
-        print(f"Distance: {d}")
-        print(f"Email: {p.email or p.user.email}")
 
-        if d <= 5:  # 5 KM radius
+        print(f"Checking {p.user.username}")
+        print(f"Distance: {d:.2f} KM")
+
+        if d <= 5:
+
             nearby_count += 1
 
-            email = p.email
+            phone = p.phone
 
-            if email:
-                print("Inside 5 KM radius")
-                recipients = [email]
-                
+            if not phone:
+                continue
 
-                print(settings.EMAIL_HOST_USER)
-                print(settings.EMAIL_HOST)
-                print(settings.EMAIL_PORT)
-                print(settings.EMAIL_USE_TLS)
+            # Add +91 automatically
+            if not phone.startswith("+"):
+                phone = "+91" + phone
 
-                try:
-                    send_mail(
-                        subject="🚨 SOS ALERT - Nearby Emergency",
-                        message=f"""
-🚨 EMERGENCY ALERT 🚨
+            try:
 
-⚠️ Someone is in danger and needs immediate help! 🆘
+                client.messages.create(
+                    body=f"""
+🚨 NEARBY SOS ALERT 🚨
 
-📍 Please respond immediately or contact emergency services. 🚑🚓🚒
-
-Distance: {d:.2f} KM
+A person within {d:.2f} KM needs immediate help.
 
 Location:
-Latitude: {lat}
-Longitude: {lon}
-
-View on Google Maps:
 {map_link}
 
-Stay alert.
-""",
-                        from_email=settings.EMAIL_HOST_USER,
-                        recipient_list=recipients,
-                        fail_silently=False,
-                    )
-                    email_sent += 1
-                    print("Nearby user email sent successfully")
+Please help if possible.
+                    """,
+                    from_=settings.TWILIO_PHONE_NUMBER,
+                    to=phone
+                )
 
-                except Exception as e:
-                    print("Nearby email error:", e)
+                nearby_sms_sent += 1
+                print(f"Nearby SMS sent to {phone}")
+
+            except Exception as e:
+                print(f"Nearby SMS Error ({phone}): {e}")
 
     return JsonResponse({
         "message": "SOS triggered successfully",
+        "trusted_contacts": len(trusted_numbers),
+        "trusted_sms_sent": trusted_sms_sent,
         "nearby_users_found": nearby_count,
-        "nearby_profile_emails_sent": email_sent,
-        "trusted_contacts": len(trusted_emails),
+        "nearby_sms_sent": nearby_sms_sent,
     })
