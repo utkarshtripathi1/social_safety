@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
-
+from django.conf import settings
 from .forms import SignupForm
 from .models import Report, Contact, Profile, SOS
 
@@ -259,6 +259,12 @@ Stay safe.
             if email:
                 print("Inside 5 KM radius")
                 recipients = [email]
+                
+
+                print(settings.EMAIL_HOST_USER)
+                print(settings.EMAIL_HOST)
+                print(settings.EMAIL_PORT)
+                print(settings.EMAIL_USE_TLS)
 
                 try:
                     send_mail(
