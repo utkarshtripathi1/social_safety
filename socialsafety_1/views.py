@@ -255,6 +255,48 @@ Please contact them immediately.
             print(f"Trusted SMS Error ({phone}): {e}")
 
     # ===========================================
+    # SEND EMAIL TO TRUSTED CONTACTS
+    # ===========================================
+
+    trusted_emails = list(
+        Contact.objects.filter(user=request.user)
+        .exclude(email__isnull=True)
+        .exclude(email="")
+        .values_list("email", flat=True)
+    )
+
+    trusted_email_sent = 0
+
+    print("Trusted emails:", trusted_emails)
+
+    for email in trusted_emails:
+        try:
+            send_mail(
+                subject="🚨 SOS Alert - Immediate Help Needed",
+                message=f"""
+🚨 SOS ALERT 🚨
+
+Someone needs immediate help!
+
+Current Location:
+{map_link}
+
+Please contact them immediately.
+
+This alert was generated automatically from the Social Safety System.
+                """,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+
+            trusted_email_sent += 1
+            print(f"Email sent to {email}")
+
+        except Exception as e:
+            print(f"Trusted Email Error ({email}): {e}")
+
+    # ===========================================
     # SEND SMS TO NEARBY USERS
     # ===========================================
 
@@ -313,6 +355,8 @@ Please help if possible.
         "message": "SOS triggered successfully",
         "trusted_contacts": len(trusted_numbers),
         "trusted_sms_sent": trusted_sms_sent,
+        "trusted_emails": len(trusted_emails),
+        "trusted_email_sent": trusted_email_sent,
         "nearby_users_found": nearby_count,
         "nearby_sms_sent": nearby_sms_sent,
     })
